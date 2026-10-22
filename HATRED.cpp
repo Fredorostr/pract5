@@ -29,13 +29,13 @@ class Book {
         int getYear() const{
             return year;
         }
-        void setYear(int& newYear){
+        void setYear(int newYear){
             year = newYear;
         }
         bool getgivenNot() const{
             return givenNot;
         }
-        void setgivenNot(bool& newGiven){
+        void setgivenNot(bool newGiven){
             givenNot = newGiven;
         }
 
@@ -63,8 +63,19 @@ class Reader{
         int getIdReader() const{
             return IdReader;
         }
-        void setIdReader(int& newId){
+        void setIdReader(int newId){
             IdReader = newId;
+        }
+        void takeBook(std::shared_ptr<Book> book){
+            takenBook.push_back(book);
+        }
+        void returnBook(std::shared_ptr<Book> book){
+            for(auto it = takenBook.begin(); it != takenBook.end(); ++it){
+                if (*it == book ) {
+                    takenBook.erase(it);
+                    return;
+                }
+            }
         }
 };
 
@@ -189,7 +200,7 @@ class library {
         std::cout<<"введите новое имя: ";
         std::cin.ignore();
         std::getline(std::cin, newName);
-        Readers[id]-> setName(newName);
+        Readers[ind]-> setName(newName);
         std::cout<<"Имя обновлено";
 
     }
@@ -226,7 +237,7 @@ class library {
         
         const auto& books = Readers[idx] -> getTakenBook();
 
-        if (Books.empty()) {
+        if (books.empty()) {
             std::cout<<"У него книг нету\n";
             return;
         }
@@ -255,13 +266,46 @@ class library {
         std::cout<<"Выдано:"<<givenBooks<<"\n";
         std::cout<<"Читателей: " <<ReadersTotal<<"\n";
     }
+    void manageBook(const std::string& bookName, int readerId){
+        int bIdx = findBook(bookName);
+        int rIdx = findIdReader(readerId);
+        if (bIdx == -1) {
+            std::cout<<"Нет такой книги";
+            return;
+        }
+        if (rIdx == -1) {
+            std::cout<<"нет такого читателя";
+            return;
+        }
+        int action;
+        std::cout<<"1 - выдать книгу \n 2 - вернуть книгу: ";
+        std::cin>>action;
+        if (action == 1) {
+            if (Books[bIdx]->getgivenNot() == true) {
+                std::cout<<"уже выдана";
+                return;
+            }
+            Books[bIdx]->setgivenNot(true);
+            Readers[rIdx]->takeBook(Books[bIdx]);
+            std::cout<<"Книга выдана\n";
+        }
+        else if (action == 2) {
+            if (Books[bIdx]->getgivenNot() == false) {
+                std::cout<<"уже в библиотеке";
+                return;
+            }
+            Books[bIdx]->setgivenNot(false);
+            Readers[rIdx]->returnBook(Books[bIdx]);
+            std::cout<<"возвращена";
+        }
+    }
     };
 
 int main(){
     library MyLib;
     int answer = -1;
-    while (answer != -1) {
-        std::cout<<"Введите действие:\n 1.Добавить читателя  \n 2. добавить книгу\n 3. изменить книгу\n 4. изменить читателя \n 5. удалить книгу \n 6. удалить читателя \n 7. показать все книги \n 8. показать всех читателей \n 9. показать книги читателя \n 10. показать статистику \n 0 - выход\n";
+    while (answer != 0) {
+        std::cout<<"Введите действие:\n 1.Добавить читателя  \n 2. добавить книгу\n 3. изменить книгу\n 4. изменить читателя \n 5. удалить книгу \n 6. удалить читателя \n 7. показать все книги \n 8. показать всех читателей \n 9. показать книги читателя \n 10. показать статистику\n 11. Выдать или принять книгу \n 0 - выход\n";
         std::cin>>answer;
         switch (answer) {
             case 1:{
@@ -270,6 +314,8 @@ int main(){
                 std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
                 std::cout<<"Введите имя читателя: ";
                 std::getline(std::cin, Nameread);
+                std::cout<<"\nВведите id читателя: ";
+                std::cin>>id;
                 auto newReadr = std::make_shared<Reader>(Nameread, id);
                 MyLib.addReader(newReadr);
                 std::cout<<"Добавлен\n";
@@ -338,6 +384,17 @@ int main(){
             }
             case 10:{
                 MyLib.statistic();
+                break;
+            }
+            case 11: {
+                std::string NameBook;
+                int readerId;
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cout<<"введите название книги: ";
+                std::getline(std::cin, NameBook);
+                std::cout<<"введите id читателя";
+                std::cin>>readerId;
+                MyLib.manageBook(NameBook, readerId);
                 break;
             }
 
